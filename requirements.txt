@@ -3,3 +3,4 @@ symspellpy
 textblob
 pyperclip
 fitz
+setuptools
