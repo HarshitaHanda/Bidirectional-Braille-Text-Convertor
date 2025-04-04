@@ -4,3 +4,4 @@ textblob
 pyperclip
 fitz
 setuptools
+PyMuPDF
