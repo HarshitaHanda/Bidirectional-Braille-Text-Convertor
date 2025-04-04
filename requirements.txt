@@ -1,0 +1,5 @@
+streamlit
+symspellpy
+textblob
+pyperclip
+fitz
