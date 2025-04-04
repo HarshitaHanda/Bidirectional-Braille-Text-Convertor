@@ -9,17 +9,18 @@ import re
 
 # Corrected Braille mappings with proper number handling
 braille_to_text = {
+    # Letters
     '⠁': 'a', '⠃': 'b', '⠉': 'c', '⠙': 'd', '⠑': 'e',
     '⠋': 'f', '⠛': 'g', '⠓': 'h', '⠊': 'i', '⠚': 'j',
     '⠅': 'k', '⠇': 'l', '⠍': 'm', '⠝': 'n', '⠕': 'o',
     '⠏': 'p', '⠟': 'q', '⠗': 'r', '⠎': 's', '⠞': 't',
     '⠥': 'u', '⠧': 'v', '⠺': 'w', '⠭': 'x', '⠽': 'y',
     '⠵': 'z',
-
+    
     # Numbers (with numeric prefix ⠼)
     '⠼⠁': '1', '⠼⠃': '2', '⠼⠉': '3', '⠼⠙': '4', '⠼⠑': '5',
     '⠼⠋': '6', '⠼⠛': '7', '⠼⠓': '8', '⠼⠊': '9', '⠼⠚': '0',
-
+    
     # Punctuation and symbols
     '⠀': ' ', '⠂': ',', '⠲': '.', '⠦': '?', '⠤': '-',
     '⠖': '!', '⠴': ':', '⠰': '#', '⠔': '"', '⠣': ';',
@@ -98,7 +99,7 @@ def main():
     # Mode selection
     mode = st.radio("Choose Conversion Mode", ("Text to Braille", "Braille to Text"))
 
-    # File upload
+    # Option 1: Upload PDF for conversion
     uploaded_pdf = st.file_uploader("Upload PDF File", type=["pdf"])
 
     if uploaded_pdf is not None:
@@ -118,10 +119,28 @@ def main():
     else:
         st.warning("Upload a PDF file to proceed with conversion.")
 
+    # Option 2: User Input text box for conversion
+    st.header("Or directly type in the text:")
+    input_text = st.text_area("Enter Text for Conversion", height=100)
+
+    if input_text:
+        if mode == "Braille to Text":
+            # Convert from Braille to text
+            result_text = braille_to_text_conversion(input_text)
+            st.text_area("Converted Text", result_text, height=150)
+        else:
+            # Convert from Text to Braille
+            result_braille = text_to_braille_conversion(input_text)
+            st.text_area("Converted Braille", result_braille, height=150)
+
     # Add option to copy text to clipboard
     if st.button("Copy to Clipboard"):
         pyperclip.copy(st.session_state.get('converted_text', ''))
         st.success("Text copied to clipboard!")
+
+    # Virtual Braille Keyboard
+    if st.button("Show Braille Keyboard"):
+        st.text("This is where the Braille Keyboard would appear in your app.")
 
 # Run the Streamlit app
 if __name__ == "__main__":
