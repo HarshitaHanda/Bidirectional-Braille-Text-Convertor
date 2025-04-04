@@ -1,14 +1,14 @@
 import streamlit as st
 import fitz  # PyMuPDF for PDF extraction
-import pyperclip  # For copying text to clipboard
-import re
 from symspellpy import SymSpell, Verbosity
-from textblob import TextBlob
 import pkg_resources
+import re
+from textblob import TextBlob
+import json
+import pyperclip  # For copying text to clipboard
 
-# Braille-Text Mappings (Unicode Braille characters)
+# Corrected Braille mappings with proper number handling
 braille_to_text = {
-    # Letters
     '⠁': 'a', '⠃': 'b', '⠉': 'c', '⠙': 'd', '⠑': 'e',
     '⠋': 'f', '⠛': 'g', '⠓': 'h', '⠊': 'i', '⠚': 'j',
     '⠅': 'k', '⠇': 'l', '⠍': 'm', '⠝': 'n', '⠕': 'o',
@@ -84,43 +84,86 @@ def text_to_braille_conversion(text_str):
     return ''.join(braille_str)
 
 # PDF extraction function
-def extract_text_from_pdf(pdf_file):
-    doc = fitz.open(pdf_file)
-    text = ""
-    for page in doc:
-        text += page.get_text()
-    return text
+def extract_text_from_pdf(uploaded_pdf):
+    try:
+        # Ensure the uploaded file is passed as a file-like object
+        file_bytes = uploaded_pdf.read()
+        if file_bytes[:4] != b"%PDF":  # Check if it's a valid PDF
+            raise ValueError("Uploaded file is not a valid PDF.")
 
+        # Open PDF from the file stream
+        with fitz.open(stream=file_bytes, filetype="pdf") as doc:
+            text = ""
+            for page in doc:
+                text += page.get_text()
+        return text
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+# Dictionary Management
+class Dictionary:
+    def __init__(self, filepath="user_dictionary.json"):
+        self.filepath = filepath
+        self.load()
+
+    def load(self):
+        try:
+            with open(self.filepath, "r") as file:
+                self.words = json.load(file)
+        except FileNotFoundError:
+            self.words = []
+
+    def save(self):
+        with open(self.filepath, "w") as file:
+            json.dump(self.words, file)
+
+    def add(self, word):
+        if word not in self.words:
+            self.words.append(word)
+            self.save()
+        else:
+            messagebox.showinfo("Info", "Word already in dictionary!")
+
+    def get_all(self):
+        return self.words
+
+# GUI Application
 def main():
     st.title("Braille Converter")
-
-    # Select conversion mode
-    mode = st.radio("Select Conversion Mode:", ["Text to Braille", "Braille to Text"])
-
-    # Text input or braille input based on the mode
-    input_text = st.text_area("Enter text or Braille:")
     
-    # Conversion function
-    def convert_text():
+    mode = st.radio("Select Conversion Mode", ["Text to Braille", "Braille to Text"])
+    input_text = st.text_area("Enter text or Braille", "")
+
+    # Conversion Button
+    if st.button("Convert"):
         if mode == "Text to Braille":
             result = text_to_braille_conversion(input_text)
         else:
             result = braille_to_text_conversion(input_text)
-        return result
 
-    # Display the conversion result
-    st.text_area("Converted Result:", value=convert_text(), height=150)
+        st.subheader("Conversion Result")
+        st.text(result)
 
-    # PDF Upload
-    uploaded_pdf = st.file_uploader("Upload PDF", type=["pdf"])
+    # Copy to clipboard Button
+    if st.button("Copy Result to Clipboard"):
+        pyperclip.copy(result)
+        st.success("Text copied to clipboard!")
+
+    # Dictionary Section
+    st.subheader("Add to your Dictionary")
+    new_word = st.text_input("Add a new word to your dictionary:")
+    if st.button("Add Word"):
+        if new_word:
+            dictionary = Dictionary()
+            dictionary.add(new_word)
+            st.success(f"'{new_word}' added to your dictionary!")
+
+    # PDF File Upload
+    uploaded_pdf = st.file_uploader("Upload a PDF file", type=["pdf"])
     if uploaded_pdf is not None:
         extracted_text = extract_text_from_pdf(uploaded_pdf)
-        st.text_area("Extracted Text from PDF:", value=extracted_text, height=150)
-
-    # Copy to Clipboard button
-    if st.button("Copy Result to Clipboard"):
-        pyperclip.copy(convert_text())
-        st.success("Text copied to clipboard!")
+        st.subheader("Extracted Text from PDF:")
+        st.text(extracted_text)
 
 if __name__ == "__main__":
     main()
