@@ -137,12 +137,23 @@ with col2:
     if st.button("Clear All"):
         st.session_state.input_text = ""
         st.session_state.output_text = ""
+# Replace the existing "Copy Result" button code with this:
 with col3:
     if st.button("Copy Result"):
         if st.session_state.output_text:
-            # Using Streamlit's own text area for easy copy/paste
-            st.text_area("Output", value=st.session_state.output_text, height=150, key="output_area")
-            st.success("Ready to copy!")
+            # Use JavaScript to copy the text to clipboard
+            js_code = f"""
+            <script>
+            function copyText() {{
+                var textArea = document.getElementById("output_area");
+                textArea.select();
+                document.execCommand('copy');
+            }}
+            copyText();
+            </script>
+            """
+            st.components.v1.html(js_code)
+            st.success("Copied to clipboard!")
         else:
             st.warning("Nothing to copy!")
 
@@ -150,8 +161,8 @@ with col3:
 if st.session_state.output_text:
     st.subheader("Conversion Result")
     # Using a unique key for the output text area
-    st.text_area("Output", value=st.session_state.output_text, height=150, key="output_area_unique")
-
+# Change the output text area to have a fixed ID
+   st.text_area("Output", value=st.session_state.output_text, height=150, key="output_area")
 # Virtual Braille Keyboard
 show_braille_keyboard()
 
