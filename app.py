@@ -6,6 +6,10 @@ from textblob import TextBlob  # Grammar and spell correction
 from symspellpy import SymSpell, Verbosity
 import pkg_resources
 import re
+import nltk
+nltk.download('brown')
+nltk.download('punkt')
+
 
 # Corrected Braille mappings with proper number handling
 braille_to_text = {
