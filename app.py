@@ -20,18 +20,26 @@ braille_to_text = {
     '⠀': ' ', '⠂': ',', '⠲': '.', '⠦': '?', '⠤': '-',
     '⠖': '!', '⠴': ':', '⠰': '#', '⠔': '"', '⠣': ';',
     '⠷': '(', '⠾': ')', '⠡': '+', '⠯': '=',
-    '⠮': '*', '⠾': ']', '⠢': '$', '⠶': '_'
+    '⠮': '*', '⠢': '$', '⠶': '_'
 }
 
+# Invert the dictionary for text to braille
 text_to_braille = {v: k for k, v in braille_to_text.items()}
+text_to_braille.update({
+    '1': '⠼⠁', '2': '⠼⠃', '3': '⠼⠉', '4': '⠼⠙', '5': '⠼⠑',
+    '6': '⠼⠋', '7': '⠼⠛', '8': '⠼⠓', '9': '⠼⠊', '0': '⠼⠚'
+})
 
+# Initialize SymSpell
 sym_spell = SymSpell(max_dictionary_edit_distance=2, prefix_length=7)
 dictionary_path = pkg_resources.resource_filename("symspellpy", "frequency_dictionary_en_82_765.txt")
 sym_spell.load_dictionary(dictionary_path, term_index=0, count_index=1)
 
-# Session state initialization
+# Session state defaults
 if 'output_text' not in st.session_state:
     st.session_state.output_text = ""
+if 'input_text' not in st.session_state:
+    st.session_state.input_text = ""
 if 'user_dict' not in st.session_state:
     try:
         with open("user_dictionary.json", "r") as f:
@@ -73,10 +81,7 @@ def text_to_braille_conversion(text_str):
     braille_str = []
     text_str = text_str.lower()
     for char in text_str:
-        if char.isdigit():
-            braille_str.append(text_to_braille.get(f'⠼{char}', '?'))
-        else:
-            braille_str.append(text_to_braille.get(char, '?'))
+        braille_str.append(text_to_braille.get(char, '?'))
     return ''.join(braille_str)
 
 def handle_pdf_upload():
@@ -95,8 +100,6 @@ def show_braille_keyboard():
     for i, char in enumerate(chars):
         with cols[i % 6]:
             if st.button(char, key=f"kb_{i}"):
-                if 'input_text' not in st.session_state:
-                    st.session_state.input_text = ""
                 st.session_state.input_text += char
 
 def update_dictionary(new_word):
@@ -109,9 +112,9 @@ def update_dictionary(new_word):
         st.sidebar.warning("Word already in dictionary!")
 
 # UI Layout
-st.title("Enhanced Braille Converter")
+st.title("🔠 Enhanced Braille Converter")
 
-# Sidebar controls
+# Sidebar
 with st.sidebar:
     st.header("Controls")
     st.session_state.conversion_mode = st.radio(
@@ -121,37 +124,39 @@ with st.sidebar:
     )
     
     handle_pdf_upload()
-    
+
     st.header("Dictionary Management")
     new_word = st.text_input("Add new word to dictionary")
     if st.button("Add to Dictionary"):
         update_dictionary(new_word)
-    
+
     if st.button("Show Dictionary"):
         st.write("User Dictionary:", st.session_state.user_dict)
 
-# Main content
-input_text = st.text_area(
-    "Input Text", 
-    height=150,
-    key="input_text"
-)
+# Main App
+st.text_area("Input Text", height=150, key="input_text")
 
-col1, col2, col3 = st.columns([2,2,2])
+col1, col2, col3 = st.columns([2, 2, 2])
 with col1:
     if st.button("Convert"):
-        if st.session_state.conversion_mode == "text_to_braille":
-            st.session_state.output_text = text_to_braille_conversion(st.session_state.input_text)
+        if st.session_state.input_text.strip() == "":
+            st.warning("Please enter some input text.")
         else:
-            st.session_state.output_text = braille_to_text_conversion(st.session_state.input_text)
+            if st.session_state.conversion_mode == "text_to_braille":
+                st.session_state.output_text = text_to_braille_conversion(st.session_state.input_text)
+            else:
+                st.session_state.output_text = braille_to_text_conversion(st.session_state.input_text)
 with col2:
     if st.button("Clear All"):
         st.session_state.input_text = ""
         st.session_state.output_text = ""
 with col3:
     if st.button("Copy Result"):
-        pyperclip.copy(st.session_state.output_text)
-        st.success("Copied to clipboard!")
+        if st.session_state.output_text:
+            pyperclip.copy(st.session_state.output_text)
+            st.success("Copied to clipboard!")
+        else:
+            st.warning("Nothing to copy!")
 
 show_braille_keyboard()
 
@@ -159,7 +164,7 @@ if st.session_state.output_text:
     st.subheader("Conversion Result")
     st.text_area("Output", value=st.session_state.output_text, height=150, key="output_area")
 
-# Custom CSS for better styling
+# Styling
 st.markdown("""
 <style>
     .stTextArea textarea {
