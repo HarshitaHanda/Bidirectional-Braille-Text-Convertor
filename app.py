@@ -4,7 +4,6 @@ from symspellpy import SymSpell, Verbosity
 import pkg_resources
 import fitz
 import json
-import pyperclip
 from textblob import TextBlob
 
 # ----------------------- Braille Mappings -----------------------
@@ -148,14 +147,16 @@ with col2:
         st.session_state.input_text = ""
         st.session_state.output_text = ""
 # In the button for copying result:
+# Button for copying result - REMOVE pyperclip, instead just use st.text_area
 with col3:
     if st.button("Copy Result"):
         if st.session_state.output_text:
-            # This will allow the user to copy the output directly from the text area
+            # Using Streamlit's own text area for easy copy/paste
             st.text_area("Output", value=st.session_state.output_text, height=150)
             st.success("Ready to copy!")
         else:
             st.warning("Nothing to copy!")
+
 
 
 # Conversion Output
