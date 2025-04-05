@@ -30,8 +30,6 @@ dictionary_path = pkg_resources.resource_filename("symspellpy", "frequency_dicti
 sym_spell.load_dictionary(dictionary_path, term_index=0, count_index=1)
 
 # Session state initialization
-if 'input_text' not in st.session_state:
-    st.session_state.input_text = ""
 if 'output_text' not in st.session_state:
     st.session_state.output_text = ""
 if 'user_dict' not in st.session_state:
@@ -97,6 +95,8 @@ def show_braille_keyboard():
     for i, char in enumerate(chars):
         with cols[i % 6]:
             if st.button(char, key=f"kb_{i}"):
+                if 'input_text' not in st.session_state:
+                    st.session_state.input_text = ""
                 st.session_state.input_text += char
 
 def update_dictionary(new_word):
@@ -133,9 +133,8 @@ with st.sidebar:
 # Main content
 input_text = st.text_area(
     "Input Text", 
-    value=st.session_state.input_text,
     height=150,
-    key="input_area"
+    key="input_text"
 )
 
 col1, col2, col3 = st.columns([2,2,2])
