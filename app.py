@@ -34,18 +34,9 @@ dictionary_path = pkg_resources.resource_filename("symspellpy", "frequency_dicti
 sym_spell.load_dictionary(dictionary_path, term_index=0, count_index=1)
 
 # ----------------------- Session State -----------------------
-if 'input_text' not in st.session_state:
-    st.session_state.input_text = ""
-if 'output_text' not in st.session_state:
-    st.session_state.output_text = ""
-if 'user_dict' not in st.session_state:
-    try:
-        with open("user_dictionary.json", "r") as f:
-            st.session_state.user_dict = json.load(f)
-    except:
-        st.session_state.user_dict = []
-if 'conversion_mode' not in st.session_state:
-    st.session_state.conversion_mode = "text_to_braille"
+for var in ['input_text', 'output_text', 'user_dict', 'conversion_mode', 'keyboard_char', 'clear_flag']:
+    if var not in st.session_state:
+        st.session_state[var] = "" if var in ['input_text', 'output_text', 'keyboard_char'] else []
 
 # ----------------------- Functions -----------------------
 def auto_correct_sentence(text):
@@ -131,7 +122,7 @@ with st.sidebar:
         st.write("User Dictionary:", st.session_state.user_dict)
 
 # Input Text
-input_text = st.text_area("Input Text", height=150, value=st.session_state.input_text)
+input_text = st.text_area("Input Text", height=150, value=st.session_state.input_text, key="input_area")
 st.session_state.input_text = input_text  # Sync input_text with session state
 
 # Buttons
@@ -150,7 +141,7 @@ with col3:
     if st.button("Copy Result"):
         if st.session_state.output_text:
             # Using Streamlit's own text area for easy copy/paste
-            st.text_area("Output", value=st.session_state.output_text, height=150)
+            st.text_area("Output", value=st.session_state.output_text, height=150, key="output_area")
             st.success("Ready to copy!")
         else:
             st.warning("Nothing to copy!")
@@ -158,7 +149,8 @@ with col3:
 # Conversion Output
 if st.session_state.output_text:
     st.subheader("Conversion Result")
-    st.text_area("Output", value=st.session_state.output_text, height=150)
+    # Using a unique key for the output text area
+    st.text_area("Output", value=st.session_state.output_text, height=150, key="output_area_unique")
 
 # Virtual Braille Keyboard
 show_braille_keyboard()
