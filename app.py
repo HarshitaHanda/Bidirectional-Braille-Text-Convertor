@@ -131,8 +131,8 @@ with st.sidebar:
         st.write("User Dictionary:", st.session_state.user_dict)
 
 # Input Text
-input_text = st.text_area("Input Text", height=150, value=st.session_state.input_text, key="input_area")
-st.session_state.input_text = input_text
+input_text = st.text_area("Input Text", height=150, value=st.session_state.input_text)
+st.session_state.input_text = input_text  # Sync input_text with session state
 
 # Buttons
 col1, col2, col3 = st.columns([2, 2, 2])
@@ -146,8 +146,6 @@ with col2:
     if st.button("Clear All"):
         st.session_state.input_text = ""
         st.session_state.output_text = ""
-# In the button for copying result:
-# Button for copying result - REMOVE pyperclip, instead just use st.text_area
 with col3:
     if st.button("Copy Result"):
         if st.session_state.output_text:
@@ -157,12 +155,10 @@ with col3:
         else:
             st.warning("Nothing to copy!")
 
-
-
 # Conversion Output
 if st.session_state.output_text:
     st.subheader("Conversion Result")
-    st.text_area("Output", value=st.session_state.output_text, height=150, key="output_area")
+    st.text_area("Output", value=st.session_state.output_text, height=150)
 
 # Virtual Braille Keyboard
 show_braille_keyboard()
