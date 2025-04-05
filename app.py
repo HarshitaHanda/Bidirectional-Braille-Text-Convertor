@@ -147,13 +147,16 @@ with col2:
     if st.button("Clear All"):
         st.session_state.input_text = ""
         st.session_state.output_text = ""
+# In the button for copying result:
 with col3:
     if st.button("Copy Result"):
         if st.session_state.output_text:
-            pyperclip.copy(st.session_state.output_text)
-            st.success("Copied to clipboard!")
+            # This will allow the user to copy the output directly from the text area
+            st.text_area("Output", value=st.session_state.output_text, height=150)
+            st.success("Ready to copy!")
         else:
             st.warning("Nothing to copy!")
+
 
 # Conversion Output
 if st.session_state.output_text:
