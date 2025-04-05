@@ -142,21 +142,12 @@ with col2:
 with col3:
     if st.button("Copy Result"):
         if st.session_state.output_text:
-            try:
-                # For modern browsers
-                js = f"""
-                <script>
-                    navigator.clipboard.writeText(`{st.session_state.output_text}`)
-                        .then(() => console.log('Copied!'))
-                        .catch(err => console.error('Copy failed:', err));
-                </script>
-                """
-                st.components.v1.html(js)
-                st.success("Copied to clipboard!")
-            except Exception as e:
-                st.error(f"Copy failed: {str(e)}")
+            # Using Streamlit's own text area for easy copy/paste
+            st.text_area("Output", value=st.session_state.output_text, height=150, key="output_area")
+            st.success("Ready to copy!")
         else:
             st.warning("Nothing to copy!")
+
 
 # Conversion Output
 if st.session_state.output_text:
