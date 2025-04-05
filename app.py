@@ -101,7 +101,7 @@ def show_braille_keyboard():
                 st.session_state.input_text += char
 
 # ----------------------- UI -----------------------
-st.title("🔠 Enhanced Braille Converter")
+st.title("🔠 BrailleXpert")
 
 with st.sidebar:
     st.header("Controls")
