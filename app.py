@@ -7,7 +7,7 @@ import json
 import pyperclip
 from textblob import TextBlob
 
-# Initialize Braille mappings and spell checker
+# ----------------------- Braille Mappings -----------------------
 braille_to_text = {
     '⠁': 'a', '⠃': 'b', '⠉': 'c', '⠙': 'd', '⠑': 'e',
     '⠋': 'f', '⠛': 'g', '⠓': 'h', '⠊': 'i', '⠚': 'j',
@@ -23,33 +23,29 @@ braille_to_text = {
     '⠮': '*', '⠢': '$', '⠶': '_'
 }
 
-# Invert the dictionary for text to braille
 text_to_braille = {v: k for k, v in braille_to_text.items()}
 text_to_braille.update({
     '1': '⠼⠁', '2': '⠼⠃', '3': '⠼⠉', '4': '⠼⠙', '5': '⠼⠑',
     '6': '⠼⠋', '7': '⠼⠛', '8': '⠼⠓', '9': '⠼⠊', '0': '⠼⠚'
 })
 
-# Initialize SymSpell
+# ----------------------- SymSpell Setup -----------------------
 sym_spell = SymSpell(max_dictionary_edit_distance=2, prefix_length=7)
 dictionary_path = pkg_resources.resource_filename("symspellpy", "frequency_dictionary_en_82_765.txt")
 sym_spell.load_dictionary(dictionary_path, term_index=0, count_index=1)
 
-# Session state defaults
-if 'output_text' not in st.session_state:
-    st.session_state.output_text = ""
-if 'input_text' not in st.session_state:
-    st.session_state.input_text = ""
-if 'user_dict' not in st.session_state:
+# ----------------------- Session State Setup -----------------------
+for key in ['output_text', 'input_text', 'conversion_mode', 'user_dict']:
+    if key not in st.session_state:
+        st.session_state[key] = "" if key in ['output_text', 'input_text'] else []
+
+if isinstance(st.session_state.user_dict, str):
     try:
-        with open("user_dictionary.json", "r") as f:
-            st.session_state.user_dict = json.load(f)
+        st.session_state.user_dict = json.loads(st.session_state.user_dict)
     except:
         st.session_state.user_dict = []
-if 'conversion_mode' not in st.session_state:
-    st.session_state.conversion_mode = "text_to_braille"
 
-# Helper functions
+# ----------------------- Helper Functions -----------------------
 def auto_correct_sentence(text):
     words = re.findall(r'\w+|\s+|[^\w\s]', text)
     corrected = []
@@ -111,10 +107,9 @@ def update_dictionary(new_word):
     elif new_word in st.session_state.user_dict:
         st.sidebar.warning("Word already in dictionary!")
 
-# UI Layout
+# ----------------------- UI -----------------------
 st.title("🔠 Enhanced Braille Converter")
 
-# Sidebar
 with st.sidebar:
     st.header("Controls")
     st.session_state.conversion_mode = st.radio(
@@ -133,9 +128,10 @@ with st.sidebar:
     if st.button("Show Dictionary"):
         st.write("User Dictionary:", st.session_state.user_dict)
 
-# Main App
-st.text_area("Input Text", height=150, key="input_text")
+# Main input area
+input_text = st.text_area("Input Text", height=150, key="input_text")
 
+# Conversion buttons
 col1, col2, col3 = st.columns([2, 2, 2])
 with col1:
     if st.button("Convert"):
@@ -150,6 +146,7 @@ with col2:
     if st.button("Clear All"):
         st.session_state.input_text = ""
         st.session_state.output_text = ""
+        st.experimental_rerun()
 with col3:
     if st.button("Copy Result"):
         if st.session_state.output_text:
@@ -158,13 +155,15 @@ with col3:
         else:
             st.warning("Nothing to copy!")
 
-show_braille_keyboard()
-
+# Conversion result
 if st.session_state.output_text:
     st.subheader("Conversion Result")
     st.text_area("Output", value=st.session_state.output_text, height=150, key="output_area")
 
-# Styling
+# Moved virtual keyboard here (after conversion)
+show_braille_keyboard()
+
+# Custom styling
 st.markdown("""
 <style>
     .stTextArea textarea {
@@ -179,3 +178,4 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
