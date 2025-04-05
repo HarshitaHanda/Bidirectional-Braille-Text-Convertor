@@ -35,22 +35,11 @@ dictionary_path = pkg_resources.resource_filename("symspellpy", "frequency_dicti
 sym_spell.load_dictionary(dictionary_path, term_index=0, count_index=1)
 
 # ----------------------- Session State -----------------------
-if 'input_text' not in st.session_state:
-    st.session_state.input_text = ""
-if 'output_text' not in st.session_state:
-    st.session_state.output_text = ""
-if 'user_dict' not in st.session_state:
-    try:
-        with open("user_dictionary.json", "r") as f:
-            st.session_state.user_dict = json.load(f)
-    except:
-        st.session_state.user_dict = []
-if 'conversion_mode' not in st.session_state:
-    st.session_state.conversion_mode = "text_to_braille"
-if 'add_char' not in st.session_state:
-    st.session_state.add_char = ""
+for var in ['input_text', 'output_text', 'user_dict', 'conversion_mode', 'keyboard_char', 'clear_flag']:
+    if var not in st.session_state:
+        st.session_state[var] = "" if var in ['input_text', 'output_text', 'keyboard_char'] else []
 
-# ----------------------- Functions -----------------------
+# ----------------------- Helper Functions -----------------------
 def auto_correct_sentence(text):
     words = re.findall(r'\w+|\s+|[^\w\s]', text)
     corrected = []
@@ -110,8 +99,7 @@ def show_braille_keyboard():
     for i, char in enumerate(chars):
         with cols[i % 6]:
             if st.button(char, key=f"kb_{i}"):
-                st.session_state.add_char = char
-                st.experimental_rerun()
+                st.session_state.keyboard_char = char
 
 # ----------------------- UI -----------------------
 st.title("🔠 Enhanced Braille Converter")
@@ -123,7 +111,6 @@ with st.sidebar:
         ("text_to_braille", "braille_to_text"),
         format_func=lambda x: "Text to Braille" if x == "text_to_braille" else "Braille to Text"
     )
-
     handle_pdf_upload()
 
     st.header("Dictionary Management")
@@ -134,16 +121,22 @@ with st.sidebar:
     if st.button("Show Dictionary"):
         st.write("User Dictionary:", st.session_state.user_dict)
 
-# Handle char from virtual keyboard
-if st.session_state.add_char:
-    st.session_state.input_text += st.session_state.add_char
-    st.session_state.add_char = ""  # reset after use
+# ⌨️ Handle virtual keyboard char if added
+if st.session_state.keyboard_char:
+    st.session_state.input_text += st.session_state.keyboard_char
+    st.session_state.keyboard_char = ""
 
-# Input Text
+# 🧹 Handle clear flag
+if st.session_state.clear_flag:
+    st.session_state.input_text = ""
+    st.session_state.output_text = ""
+    st.session_state.clear_flag = False
+
+# 📥 Input Area
 input_text = st.text_area("Input Text", height=150, value=st.session_state.input_text)
-st.session_state.input_text = input_text  # keep in sync
+st.session_state.input_text = input_text  # sync
 
-# Buttons
+# 🔘 Control Buttons
 col1, col2, col3 = st.columns([2, 2, 2])
 with col1:
     if st.button("Convert"):
@@ -153,9 +146,7 @@ with col1:
             st.session_state.output_text = braille_to_text_conversion(st.session_state.input_text)
 with col2:
     if st.button("Clear All"):
-        st.session_state.input_text = ""
-        st.session_state.output_text = ""
-        st.experimental_rerun()
+        st.session_state.clear_flag = True
 with col3:
     if st.button("Copy Result"):
         if st.session_state.output_text:
@@ -164,15 +155,15 @@ with col3:
         else:
             st.warning("Nothing to copy!")
 
-# Conversion Output
+# 📤 Output
 if st.session_state.output_text:
     st.subheader("Conversion Result")
     st.text_area("Output", value=st.session_state.output_text, height=150)
 
-# Virtual Braille Keyboard (below result)
+# ⌨️ Keyboard after result
 show_braille_keyboard()
 
-# Styling
+# 💅 Styling
 st.markdown("""
 <style>
     .stTextArea textarea {
@@ -187,3 +178,4 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
