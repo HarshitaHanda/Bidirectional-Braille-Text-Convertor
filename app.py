@@ -160,9 +160,10 @@ with col3:
 # Conversion Output
 if st.session_state.output_text:
     st.subheader("Conversion Result")
+    st.text_area("Output", value=st.session_state.output_text, height=150, key="output_area")
     # Using a unique key for the output text area
 # Change the output text area to have a fixed ID
-   st.text_area("Output", value=st.session_state.output_text, height=150, key="output_area")
+   
 # Virtual Braille Keyboard
 show_braille_keyboard()
 
