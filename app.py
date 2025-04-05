@@ -138,22 +138,23 @@ with col2:
         st.session_state.input_text = ""
         st.session_state.output_text = ""
 # Replace the existing "Copy Result" button code with this:
+# In the button section:
 with col3:
     if st.button("Copy Result"):
         if st.session_state.output_text:
-            # Use JavaScript to copy the text to clipboard
-            js_code = f"""
-            <script>
-            function copyText() {{
-                var textArea = document.getElementById("output_area");
-                textArea.select();
-                document.execCommand('copy');
-            }}
-            copyText();
-            </script>
-            """
-            st.components.v1.html(js_code)
-            st.success("Copied to clipboard!")
+            try:
+                # For modern browsers
+                js = f"""
+                <script>
+                    navigator.clipboard.writeText(`{st.session_state.output_text}`)
+                        .then(() => console.log('Copied!'))
+                        .catch(err => console.error('Copy failed:', err));
+                </script>
+                """
+                st.components.v1.html(js)
+                st.success("Copied to clipboard!")
+            except Exception as e:
+                st.error(f"Copy failed: {str(e)}")
         else:
             st.warning("Nothing to copy!")
 
