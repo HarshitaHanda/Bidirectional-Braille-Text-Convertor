@@ -1,15 +1,15 @@
 # requirements.txt
-"""
+--find-links https://download.pytorch.org/whl/cpu/torch_stable.html
+
 streamlit==1.29.0
 pymupdf==1.23.8
 transformers==4.36.2
-torch==2.1.2
+torch==2.1.2+cpu
 pdf2image==1.16.3
 pytesseract==0.3.10
 gtts==2.4.0
 flashtext==2.7
 python-dotenv==1.0.0
-"""
 
 import streamlit as st
 import fitz  # PyMuPDF
@@ -24,43 +24,35 @@ from flashtext import KeywordProcessor
 
 # ----------------------- Enhanced Braille Mappings -----------------------
 BRAILLE_MAP = {
-    # Alphabet
-    'a': '⠁', 'b': '⠃', 'c': '⠉', 'd': '⠙', 'e': '⠑',
-    'f': '⠋', 'g': '⠛', 'h': '⠓', 'i': '⠊', 'j': '⠚',
-    'k': '⠅', 'l': '⠇', 'm': '⠍', 'n': '⠝', 'o': '⠕',
-    'p': '⠏', 'q': '⠟', 'r': '⠗', 's': '⠎', 't': '⠞',
-    'u': '⠥', 'v': '⠧', 'w': '⠺', 'x': '⠭', 'y': '⠽', 'z': '⠵',
-    # Numbers
-    '0': '⠚', '1': '⠁', '2': '⠃', '3': '⠉', '4': '⠙',
-    '5': '⠑', '6': '⠋', '7': '⠛', '8': '⠓', '9': '⠊',
-    # Punctuation & space
-    ' ': '⠀', '.': '⠲', ',': '⠂', '?': '⠦', '!': '⠖',
-    "'": '⠄', '-': '⠤', '(': '⠐⠣', ')': '⠐⠜',
-    '#': '⠼',  # Number sign
-    'cap': '⠠'  # Capital sign
+    'a': '⠁','b': '⠃','c': '⠉','d': '⠙','e': '⠑',
+    'f': '⠋','g': '⠛','h': '⠓','i': '⠊','j': '⠚',
+    'k': '⠅','l': '⠇','m': '⠍','n': '⠝','o': '⠕',
+    'p': '⠏','q': '⠟','r': '⠗','s': '⠎','t': '⠞',
+    'u': '⠥','v': '⠧','w': '⠺','x': '⠭','y': '⠽','z': '⠵',
+    '0': '⠚','1': '⠁','2': '⠃','3': '⠉','4': '⠙',
+    '5': '⠑','6': '⠋','7': '⠛','8': '⠓','9': '⠊',
+    ' ': '⠀','.': '⠲',',': '⠂','?': '⠦','!': '⠖',
+    "'": '⠄','-': '⠤','(': '⠐⠣',')': '⠐⠜',
+    '#': '⠼','cap': '⠠'
 }
 
 CONTRACTIONS = {
-    'the': '⠮', 'and': '⠯', 'for': '⠿', 'of': '⠷', 'with': '⠾',
-    'will': '⠂', 'his': '⠦', 'was': '⠫', 'this': '⠇', 'have': '⠬'
+    'the': '⠮','and': '⠯','for': '⠿','of': '⠷','with': '⠾',
+    'will': '⠂','his': '⠦','was': '⠫','this': '⠇','have': '⠬'
 }
 
-MEDICAL_TERMS = [
-    'diagnosis', 'prescription', 'symptoms', 'treatment', 'medication',
-    'dose', 'allergy', 'test results', 'prognosis', 'recommendation'
-]
+MEDICAL_TERMS = ['diagnosis','prescription','symptoms','treatment','medication',
+                 'dose','allergy','test results','prognosis','recommendation']
 
 # ----------------------- Helper Functions -----------------------
 def enhanced_braille_convert(text: str, use_contractions: bool = True) -> str:
     if use_contractions:
         for word, symbol in CONTRACTIONS.items():
             text = text.replace(word, symbol)
-    result = []
-    prev = ''
+    result, prev = [], ''
     for ch in text:
         if ch.isdigit():
-            if prev != '#':
-                result.append(BRAILLE_MAP['#'])
+            if prev != '#': result.append(BRAILLE_MAP['#'])
             result.append(BRAILLE_MAP[ch])
         elif ch.isupper():
             result.append(BRAILLE_MAP['cap'])
@@ -127,7 +119,6 @@ if uploaded:
     temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
     temp_pdf.write(uploaded.read())
     temp_pdf.close()
-
     audio_file = ''
     try:
         with st.spinner('Processing...'):
@@ -135,14 +126,12 @@ if uploaded:
             if not txt:
                 st.error('No text extracted')
                 st.stop()
-
             highlighted = highlight_medical(txt)
             summarizer = pipeline('summarization', model='facebook/bart-large-cnn')
             summary = summarizer(highlighted, max_length=300, min_length=100)[0]['summary_text']
             braille = enhanced_braille_convert(summary, use_contractions)
             if audio_enabled:
                 audio_file = generate_audio(summary)
-
         c1, c2 = st.columns([2,1])
         with c1:
             st.subheader('Summary')
@@ -154,9 +143,8 @@ if uploaded:
             if audio_file:
                 st.subheader('Audio')
                 st.audio(audio_file)
-                with open(audio_file,'rb') as f:
+                with open(audio_file, 'rb') as f:
                     st.download_button('Download MP3', f.read(), 'summary.mp3')
-
     except Exception as e:
         st.error(f'Error: {e}')
     finally:
