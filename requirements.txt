@@ -5,4 +5,5 @@ pyperclip
 fitz
 setuptools
 PyMuPDF
+fpdf
 
