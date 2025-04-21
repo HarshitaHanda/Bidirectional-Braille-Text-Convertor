@@ -1,7 +1,9 @@
+--find-links https://download.pytorch.org/whl/cpu/torch_stable.html
+
 streamlit==1.29.0
 pymupdf==1.23.8
 transformers==4.36.2
-torch==2.1.2
+torch==2.2.0+cpu
 python-louis==3.27.0
 pdf2image==1.16.3
 pytesseract==0.3.10
