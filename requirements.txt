@@ -5,5 +5,4 @@ pyperclip
 fitz
 setuptools
 PyMuPDF
-speech_recognition
 ipywidgets
