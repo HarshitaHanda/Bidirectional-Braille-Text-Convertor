@@ -6,3 +6,4 @@ pytesseract==0.3.10
 gtts==2.4.0
 flashtext==2.7
 python-dotenv==1.0.0
+torch==2.1.2
