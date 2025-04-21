@@ -6,4 +6,5 @@ fitz
 setuptools
 PyMuPDF
 fpdf
-
+transformers
+torch
