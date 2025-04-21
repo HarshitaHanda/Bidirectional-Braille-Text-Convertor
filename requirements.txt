@@ -6,3 +6,5 @@ fitz
 setuptools
 PyMuPDF
 ipywidgets
+SpeechRecognition
+pyaudio
