@@ -183,6 +183,8 @@
 
 
 
+
+
 import streamlit as st
 from fpdf import FPDF
 import re
@@ -213,14 +215,6 @@ text_to_braille.update({
     '1': '⠼⠁', '2': '⠼⠃', '3': '⠼⠉', '4': '⠼⠙', '5': '⠼⠑',
     '6': '⠼⠋', '7': '⠼⠛', '8': '⠼⠓', '9': '⠼⠊', '0': '⠼⠚'
 })
-
-# ----------------------- PDF Generation -----------------------
-def create_pdf(text):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.multi_cell(0, 10, txt=text)
-    return pdf.output(dest='S').encode('latin-1')
 
 # ----------------------- Spell Checker -----------------------
 sym_spell = SymSpell(max_dictionary_edit_distance=2, prefix_length=7)
@@ -294,6 +288,16 @@ def show_braille_keyboard():
             if st.button(char, key=f"kb_{i}"):
                 st.session_state.input_text += char
 
+# ----------------------- Export to PDF -----------------------
+def export_to_pdf(content):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.multi_cell(200, 10, txt=content, align="L")
+    pdf_file = "/mnt/data/BrailleXpert_Conversion_Result.pdf"
+    pdf.output(pdf_file)
+    return pdf_file
+
 # ----------------------- UI -----------------------
 st.title("🔠 BrailleXpert")
 
@@ -317,7 +321,7 @@ with st.sidebar:
 
 # Input Text
 input_text = st.text_area("Input Text", height=150, value=st.session_state.input_text, key="input_area")
-st.session_state.input_text = input_text
+st.session_state.input_text = input_text  # Sync input_text with session state
 
 # Buttons
 col1, col2, col3 = st.columns([2, 2, 2])
@@ -332,26 +336,21 @@ with col2:
         st.session_state.input_text = ""
         st.session_state.output_text = ""
 with col3:
-    if st.button("Copy Result"):
+    if st.button("Print"):
         if st.session_state.output_text:
-            st.text_area("Output", value=st.session_state.output_text, height=150, key="output_area")
-            st.success("Ready to copy!")
+            st.text_area("Print Preview", value=st.session_state.output_text, height=150, key="print_area")
+            st.success("Ready to Print!")
         else:
-            st.warning("Nothing to copy!")
+            st.warning("Nothing to print!")
 
 # Conversion Output
 if st.session_state.output_text:
     st.subheader("Conversion Result")
     st.text_area("Output", value=st.session_state.output_text, height=150, key="output_area")
-    
-    # PDF Export Button
-    pdf_bytes = create_pdf(st.session_state.output_text)
-    st.download_button(
-        label="Export to PDF",
-        data=pdf_bytes,
-        file_name="converted_result.pdf",
-        mime="application/pdf",
-    )
+
+    # Export to PDF Button
+    pdf_file = export_to_pdf(st.session_state.output_text)
+    st.sidebar.download_button("Download PDF", pdf_file)
 
 # Virtual Braille Keyboard
 show_braille_keyboard()
@@ -371,7 +370,6 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-
 
 
 
