@@ -1,9 +1,7 @@
-# requirements.txt
+# requirements.txt (simplified)
 """
 streamlit==1.29.0
 pymupdf==1.23.8
-transformers==4.36.2
-torch==2.1.0  # Add PyTorch as the backend
 pdf2image==1.16.3
 pytesseract==0.3.10
 gtts==2.4.0
@@ -13,19 +11,30 @@ python-dotenv==1.0.0
 
 import streamlit as st
 import fitz  # PyMuPDF
-try:
-    from transformers import pipeline
-    transformers_available = True
-except ImportError:
-    transformers_available = False
 import tempfile
 import os
+import re
 from pdf2image import convert_from_path
 import pytesseract
 from gtts import gTTS
 from flashtext import KeywordProcessor
 
-# [Keep all your braille mappings and helper functions the same...]
+# [Keep all your braille mappings and helper functions the same until summarization...]
+
+def simple_summarize(text, max_length=300):
+    """Basic summarization without ML dependencies"""
+    # Extract first few sentences
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+    summary = ' '.join(sentences[:3])  # First 3 sentences
+    
+    # Add key medical terms if found
+    medical_terms_found = [term for term in MEDICAL_TERMS if term.lower() in text.lower()]
+    if medical_terms_found:
+        summary += "\n\nKey terms: " + ", ".join(medical_terms_found)
+    
+    return summary[:max_length]
+
+# [Keep the rest of your helper functions the same...]
 
 # ----------------------- Streamlit UI -----------------------
 st.set_page_config(page_title="MedBraille", page_icon="♿", layout="wide")
@@ -37,8 +46,6 @@ with st.sidebar:
     use_contractions = st.checkbox("Use Braille Contractions", True)
     audio_enabled = st.checkbox("Generate Audio Summary", True)
     dark_mode = st.checkbox("High Contrast Mode")
-    if not transformers_available:
-        st.warning("Summarization disabled - required packages not installed")
 
 # [Keep your dark mode CSS the same...]
 
@@ -58,17 +65,8 @@ if uploaded_file:
             # Medical Highlighting
             highlighted_text = medical_highlight(raw_text)
             
-            # Summarization (only if transformers available)
-            if transformers_available:
-                try:
-                    summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
-                    summary = summarizer(highlighted_text, max_length=300, min_length=100)[0]['summary_text']
-                except Exception as e:
-                    st.warning(f"Summarization failed: {str(e)}")
-                    summary = highlighted_text[:500] + "..."  # Fallback to first 500 chars
-            else:
-                summary = highlighted_text[:500] + "..."  # Fallback to first 500 chars
-                st.warning("Showing partial text (summarization unavailable)")
+            # Summarization (using simple method)
+            summary = simple_summarize(highlighted_text)
             
             # Braille Conversion
             braille_output = enhanced_braille_convert(summary, use_contractions)
@@ -93,7 +91,7 @@ if uploaded_file:
                     mime="text/plain"
                 )
                 
-                if audio_file and os.path.exists(audio_file):  # Fixed this check
+                if audio_file and os.path.exists(audio_file):
                     st.subheader("Audio Summary")
                     st.audio(audio_file)
                     with open(audio_file, "rb") as f:
@@ -111,4 +109,4 @@ if uploaded_file:
             if 'audio_file' in locals() and audio_file and os.path.exists(audio_file):
                 os.remove(audio_file)
 
-# [Keep the rest of your code the same...]
+# [Keep the instructions section the same...]
