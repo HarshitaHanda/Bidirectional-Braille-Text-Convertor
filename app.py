@@ -1,82 +1,83 @@
 import streamlit as st
-import numpy as np
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Embedding, LSTM, Dense
-from sklearn.preprocessing import LabelEncoder
+import re
+from symspellpy import SymSpell
+import pkg_resources
 
-# ----------------------- Braille to English Mapping -----------------------
-braille_dict = {
+# Braille-Text Mappings (Unicode Braille characters)
+braille_to_text = {
     '⠁': 'a', '⠃': 'b', '⠉': 'c', '⠙': 'd', '⠑': 'e',
     '⠋': 'f', '⠛': 'g', '⠓': 'h', '⠊': 'i', '⠚': 'j',
     '⠅': 'k', '⠇': 'l', '⠍': 'm', '⠝': 'n', '⠕': 'o',
     '⠏': 'p', '⠟': 'q', '⠗': 'r', '⠎': 's', '⠞': 't',
-    '⠥': 'u', '⠧': 'v', '⠺': 'w', '⠭': 'x', '⠽': 'y', '⠵': 'z',
-    ' ': ' '
+    '⠥': 'u', '⠧': 'v', '⠺': 'w', '⠭': 'x', '⠽': 'y',
+    '⠵': 'z', ' ': ' ', '⠀': ' '  # Adding Braille space
 }
 
-# ----------------------- Prepare Dataset -----------------------
-braille_chars = list(braille_dict.keys())
-english_chars = [braille_dict[b] for b in braille_chars]
+text_to_braille = {v: k for k, v in braille_to_text.items()}
 
-# Encode input and output
-input_encoder = LabelEncoder()
-output_encoder = LabelEncoder()
+# Initialize SymSpell for spell correction
+sym_spell = SymSpell(max_dictionary_edit_distance=2, prefix_length=7)
+dictionary_path = pkg_resources.resource_filename("symspellpy", "frequency_dictionary_en_82_765.txt")
+sym_spell.load_dictionary(dictionary_path, term_index=0, count_index=1)
 
-X = input_encoder.fit_transform(braille_chars)
-y = output_encoder.fit_transform(english_chars)
+# Enhanced Auto-Correction for Full Sentences
+def auto_correct_sentence(text):
+    """
+    Applies auto-correction at the sentence level, preserving punctuation and spaces.
+    """
+    words = re.findall(r'\w+|\s+|[^\w\s]', text)  # Tokenize words while keeping punctuation and spaces
+    corrected_words = []
 
-X = np.array(X).reshape(-1, 1)
-y = tf.keras.utils.to_categorical(y, num_classes=len(set(y)))
+    for word in words:
+        if word.strip():  # Only process actual words, leave spaces/punctuation as they are
+            suggestions = sym_spell.lookup(word, symspellpy.Verbosity.CLOSEST, max_edit_distance=2)
+            corrected_word = suggestions[0].term if suggestions else word
+            corrected_words.append(corrected_word)
+        else:
+            corrected_words.append(word)  # Preserve spaces and punctuation
 
-# ----------------------- Define RNN-LSTM Model -----------------------
-model = Sequential()
-model.add(Embedding(input_dim=len(input_encoder.classes_), output_dim=8, input_length=1))
-model.add(LSTM(32, return_sequences=False))
-model.add(Dense(len(set(output_encoder.classes_)), activation='softmax'))
+    return ''.join(corrected_words)  # Reassemble sentence with corrections
 
-model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-model.summary()
+# Conversion Functions
+def braille_to_text_conversion(braille_str):
+    """
+    Converts Braille to text and applies sentence-level auto-correction.
+    """
+    text = ''.join([braille_to_text.get(c, '?') for c in braille_str])
+    return auto_correct_sentence(text)  # Apply AI-based auto-correction
 
-# Train the model
-model.fit(X, y, epochs=300, verbose=0)
+def text_to_braille_conversion(text_str):
+    """
+    Converts English text to Braille.
+    """
+    return ''.join([text_to_braille.get(c.lower(), '?') for c in text_str])
 
-# ----------------------- Inference Function -----------------------
-def predict_braille(braille_input):
-    result = ''
-    for ch in braille_input:
-        if ch not in braille_dict:
-            result += '?'
-            continue
-        encoded = input_encoder.transform([ch])
-        pred = model.predict(np.array(encoded).reshape(1, 1), verbose=0)
-        predicted_idx = np.argmax(pred, axis=1)
-        predicted_char = output_encoder.inverse_transform(predicted_idx)[0]
-        result += predicted_char
-    return result
+# Streamlit UI
+st.title("Braille Text Converter")
 
-# ----------------------- Streamlit UI -----------------------
-st.title("🔠 Braille to English Conversion")
+st.markdown("This app converts **Text to Braille** and **Braille to Text**. You can also correct common spelling errors automatically.")
 
-st.sidebar.header("Settings")
-user_input = st.sidebar.text_area("Enter Braille (Unicode format, e.g., ⠓⠑⠇⠇⠕):")
+# Input for Mode Selection
+mode = st.radio("Choose Mode", ["Text to Braille", "Braille to Text"])
 
-# Prediction section
-if user_input:
-    st.subheader("Predicted English Text:")
-    output_text = predict_braille(user_input)
-    st.write(output_text)
+# Text input
+input_text = st.text_area("Enter text or Braille", height=150)
 
-# Display instructions and Braille dictionary
-st.sidebar.write("""
-### Braille to English Conversion
-This app converts Braille characters into English text using a trained deep learning model.
-- Enter Braille text in the left sidebar.
-- The predicted English translation will be displayed in the main area.
-""")
-st.sidebar.write("### Braille Mapping Example:")
-st.sidebar.write(braille_dict)
+if mode == "Text to Braille":
+    if st.button("Convert to Braille"):
+        result = text_to_braille_conversion(input_text)
+        st.write("Converted Braille:", result)
+        
+elif mode == "Braille to Text":
+    if st.button("Convert to Text"):
+        result = braille_to_text_conversion(input_text)
+        st.write("Converted Text:", result)
 
-# ----------------------- Error Handling -----------------------
-if user_input == "":
-    st.warning("Please enter Braille text to see the prediction!")
+# Downloadable Converted Output
+if result:
+    st.download_button(
+        label="Download Output",
+        data=result,
+        file_name="braille_output.txt",
+        mime="text/plain"
+    )
