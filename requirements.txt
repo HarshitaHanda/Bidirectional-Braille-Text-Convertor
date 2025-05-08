@@ -1,9 +1,3 @@
 streamlit==1.29.0
-pymupdf==1.23.8
-transformers==4.36.2
-torch==2.1.0+cpu
-python-louis==3.27.0
-pdf2image==1.16.3
-pytesseract==0.3.10
-gtts==2.4.0
-flashtext==2.7
+tensorflow==2.10.0
+scikit-learn==1.1.2
